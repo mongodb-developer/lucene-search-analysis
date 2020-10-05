@@ -6,10 +6,10 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>com.mongodb</groupId>
-	<artifactId>atlas.search.analysis</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<artifactId>atlas-search-analysis</artifactId>
+	<version>0.0.1</version>
 
-	<name>atlas.search.analysis</name>
+	<name>atlas-search-analysis</name>
 	<!-- FIXME change it to the project's website -->
 	<url>http://www.example.com</url>
 
@@ -47,8 +47,9 @@
 	</dependencies>
 
 	<build>
-		<pluginManagement><!-- lock down plugins versions to avoid using Maven 
+	<!-- lock down plugins versions to avoid using Maven 
 				defaults (may be moved to parent pom) -->
+		<pluginManagement>
 			<plugins>
 				<!-- clean lifecycle, see https://maven.apache.org/ref/current/maven-core/lifecycles.html#clean_Lifecycle -->
 				<plugin>
