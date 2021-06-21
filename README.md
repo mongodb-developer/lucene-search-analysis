@@ -78,7 +78,7 @@ Using org.apache.lucene.analysis.fr.FrenchAnalyzer
 **Sample 1**
 
 ```bash
-cat <<EOF >> mappings.json
+cat <<EOF >> index.json
 {
 	"analyzers": [
 		{
@@ -116,7 +116,7 @@ Using org.apache.lucene.analysis.custom.CustomAnalyzer
 **Sample 2**
 
 ```bash
-cat <<EOF >> mappings.json
+cat <<EOF >> index.json
 {
 	"name": "htmlStrippingAnalyzer",
 	"charFilters": [
