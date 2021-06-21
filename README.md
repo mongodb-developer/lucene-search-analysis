@@ -110,7 +110,7 @@ cat <<EOF >> index.json
 
 mvn -q exec:java -Dexec.args="-a custom -t 'rocky ii' -d index.json -n romanAnalyzer"
 Using org.apache.lucene.analysis.custom.CustomAnalyzer
-[rocky] [ii]
+[rocky] [2]
 ```
 
 **Sample 2**
