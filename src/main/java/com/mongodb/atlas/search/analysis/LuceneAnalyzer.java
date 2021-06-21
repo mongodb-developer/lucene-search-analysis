@@ -5,6 +5,10 @@ import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.MessageFormat;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -21,9 +25,13 @@ import org.apache.lucene.analysis.bg.BulgarianAnalyzer;
 import org.apache.lucene.analysis.bn.BengaliAnalyzer;
 import org.apache.lucene.analysis.br.BrazilianAnalyzer;
 import org.apache.lucene.analysis.ca.CatalanAnalyzer;
+import org.apache.lucene.analysis.charfilter.HTMLStripCharFilterFactory;
+import org.apache.lucene.analysis.charfilter.AtlasSearchMappingCharFilterFactory;
 import org.apache.lucene.analysis.cjk.CJKAnalyzer;
 import org.apache.lucene.analysis.ckb.SoraniAnalyzer;
+import org.apache.lucene.analysis.core.AtlasSearchStopFilterFactory;
 import org.apache.lucene.analysis.core.KeywordAnalyzer;
+import org.apache.lucene.analysis.core.LowerCaseFilterFactory;
 import org.apache.lucene.analysis.core.SimpleAnalyzer;
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.analysis.cz.CzechAnalyzer;
@@ -41,27 +49,57 @@ import org.apache.lucene.analysis.gl.GalicianAnalyzer;
 import org.apache.lucene.analysis.hi.HindiAnalyzer;
 import org.apache.lucene.analysis.hu.HungarianAnalyzer;
 import org.apache.lucene.analysis.hy.ArmenianAnalyzer;
+import org.apache.lucene.analysis.icu.ICUFoldingFilterFactory;
+import org.apache.lucene.analysis.icu.ICUNormalizer2FilterFactory;
 import org.apache.lucene.analysis.id.IndonesianAnalyzer;
 import org.apache.lucene.analysis.it.ItalianAnalyzer;
 import org.apache.lucene.analysis.lt.LithuanianAnalyzer;
 import org.apache.lucene.analysis.lv.LatvianAnalyzer;
+import org.apache.lucene.analysis.miscellaneous.LengthFilterFactory;
+import org.apache.lucene.analysis.miscellaneous.TrimFilterFactory;
+import org.apache.lucene.analysis.ngram.EdgeNGramFilterFactory;
+import org.apache.lucene.analysis.ngram.NGramFilterFactory;
 import org.apache.lucene.analysis.nl.DutchAnalyzer;
 import org.apache.lucene.analysis.no.NorwegianAnalyzer;
+import org.apache.lucene.analysis.pattern.PatternReplaceFilterFactory;
+import org.apache.lucene.analysis.phonetic.DaitchMokotoffSoundexFilterFactory;
 import org.apache.lucene.analysis.ro.RomanianAnalyzer;
 import org.apache.lucene.analysis.ru.RussianAnalyzer;
+import org.apache.lucene.analysis.shingle.ShingleFilterFactory;
+import org.apache.lucene.analysis.snowball.SnowballPorterFilterFactory;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.sv.SwedishAnalyzer;
 import org.apache.lucene.analysis.th.ThaiAnalyzer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tr.TurkishAnalyzer;
+import org.apache.lucene.analysis.util.TokenFilterFactory;
+import org.apache.lucene.analysis.custom.CustomAnalyzer;
+import org.apache.lucene.analysis.custom.CustomAnalyzer.Builder;
+
+import org.json.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONTokener;
 
 public class LuceneAnalyzer {
-	private static final String ANALYZER_HELP = 
+	private static final String ANALYZER_HELP     = 
 		"Analyzer must be one of [Standard, Simple, Whitespace, Language, Keyword]";
-	private static final String LANG_CODE_HELP = 
+	private static final String LANG_CODE_HELP    = 
 		"Language code must be one of [ar, bg, bn, br, ca, cjk, ckb, cz, da, de, el, en, es, et, fa, fi, fr, ga, gl, hi, hu, hy, id, it, lt, lv, nl, no, ro, ru, sv, th, tr]";
-	private static final String LIST_OPT = "list";
+	private static final String FILTER_TYPE_HELP  =
+		"Filter type must be one of [lowercase, length, icuFolding, icuNormalizer, nGram, edgeGram, shingle, regex, snowballStemming, stopword, trim]";
+	private static final String LIST_OPT          = "list";
+	private static final String KEY_ANALYZERS     = "analyzers";
+	private static final String KEY_TOKENIZER     = "tokenizer";
+	private static final String KEY_CHAR_FILTERS  = "charFilters";
+	private static final String KEY_TOKEN_FILTERS = "tokenFilters";
+	private static final String KEY_MAPPING       = "mapping";
+	private static final String KEY_MAPPINGS      = "mappings";
+	private static final String KEY_IGNORED_TAGS  = "ignoredTags";
+	private static final String KEY_ESCAPED_TAGS  = "escapedTags";
+	private static final String KEY_NAME          = "name";
+	private static final String KEY_TYPE          = "type";
 	
+	@SuppressWarnings("unchecked")
 	public static void main(String[] args) {
 		LuceneAnalyzer tester = new LuceneAnalyzer();
 
@@ -71,6 +109,8 @@ public class LuceneAnalyzer {
 		Option textOpt = Option.builder("t").longOpt("text").hasArg().desc("Input text to analyze").build();
 		Option fileOpt = Option.builder("f").longOpt("file").hasArg().desc("Input text file to analyze").build();
 		Option helpOpt = Option.builder("h").longOpt("help").desc("Prints this message").build();
+		Option defOpt = Option.builder("d").longOpt("definition").hasArg().desc("Custom analyzer definition file").build();
+		Option nameOpt = Option.builder("n").longOpt("name").hasArg().desc("Custom analyzer name").build();
 
 		CommandLineParser parser = new DefaultParser();
 		CommandLine cmd = null;
@@ -79,11 +119,15 @@ public class LuceneAnalyzer {
 		Options helpOptions = new Options();
 		helpOptions.addOption(helpOpt)
 			.addOption(analyzerOpt)
-			.addOption(langOpt);
+			.addOption(langOpt)
+			.addOption(nameOpt);
 		
 		OptionGroup inputGroup = new OptionGroup();
 		inputGroup.addOption(fileOpt).addOption(textOpt).setRequired(true);
 		helpOptions.addOptionGroup(inputGroup);
+		OptionGroup customGroup = new OptionGroup();
+		customGroup.addOption(defOpt).setRequired(true);
+		helpOptions.addOptionGroup(customGroup);
 
 		try {
 			// parse help
@@ -294,6 +338,85 @@ public class LuceneAnalyzer {
 							break;
 							
 
+						case "custom":
+							cmd = parser.parse(helpOptions, args, true);
+							if (customGroup.getSelected().equals(defOpt.getOpt())) {
+								JSONObject def = null != cmd && cmd.hasOption(defOpt.getOpt()) && cmd.hasOption(nameOpt.getOpt()) ? tester.readJsonFile(cmd.getOptionValue(defOpt.getOpt()), cmd.getOptionValue(nameOpt.getOpt())) : null;
+								if (null == def) {
+									throw new ParseException(MessageFormat.format("File ''{0}'' cannot be null or empty", cmd.getOptionValue(defOpt.getOpt())));
+								}
+								
+								System.out.println(def.toString(2));
+								Builder builder = CustomAnalyzer.builder()
+									.withTokenizer(def.optJSONObject(KEY_TOKENIZER).getString(KEY_TYPE));
+								
+								JSONArray tokenFilters = def.optJSONArray(KEY_TOKEN_FILTERS);
+								if (null != tokenFilters && !tokenFilters.isEmpty()) {
+									Object[] objs = tester.tokenFiltersToParams(tokenFilters);
+									if (objs.length > 0) {
+										int j = 0;
+										for (int i = 0; i < objs.length; i++) {
+											if (objs[i].getClass().getSimpleName().equals("Class")) {
+												j = i;
+												ArrayList<String> params = new ArrayList<>();
+												if (j < objs.length - 1) {
+													String clsName = objs[++j].getClass().getSimpleName();
+													//System.out.println("Next class: " + clsName);
+													while (!clsName.equals("Class") && j < objs.length) {
+														//System.out.println("Param: " + objs[j]);
+														params.add(objs[j].toString());
+														j++;
+														if (j < objs.length) {
+															clsName = objs[j].getClass().getSimpleName();
+														} else {
+															break;
+														}
+													}
+												}
+												String[] strs = new String[params.size()];
+												strs = params.toArray(strs);
+												builder = builder.addTokenFilter((Class<? extends TokenFilterFactory>)objs[i], strs);
+											}
+										}
+									}
+								}
+								
+								@SuppressWarnings("rawtypes")
+								Class charFilterClass = null;
+								String charFilterType = null;
+								JSONArray charFilters = def.optJSONArray(KEY_CHAR_FILTERS);
+								
+								if (null != charFilters && !charFilters.isEmpty()) {
+									charFilterType = ((JSONObject)charFilters.get(0)).getString(KEY_TYPE);
+									if (charFilterType.equals("htmlStrip")) {
+										charFilterClass = HTMLStripCharFilterFactory.class;
+									} else if (charFilterType.equals("mapping")) {
+										charFilterClass = AtlasSearchMappingCharFilterFactory.class;
+									}
+									
+									String[] strs = tester.charFiltersToParams(charFilters, charFilterType);
+									if (charFilterType.equals("mapping")) {
+										for (int i = 0; i < strs.length; i++) {
+											builder = builder.addCharFilter(charFilterClass, strs[i], strs[++i]);
+										}
+										analyzer = builder.build();
+									} else {
+										analyzer = builder
+											.addCharFilter(charFilterClass, strs)
+											.build();
+									}
+								}
+								
+								if (null != analyzer) {
+									tester.displayTokens(analyzer, text);
+								} else {
+									System.out.println("Analyzer not built yet");
+								}
+							} else {
+								throw new ParseException(MessageFormat.format("Missing required option: ''{0}''", defOpt.getOpt()));								
+							}
+							break;
+							
 						case "help":
 							System.out.println(ANALYZER_HELP);
 							break;
@@ -304,20 +427,233 @@ public class LuceneAnalyzer {
 								analyzerType, ANALYZER_HELP));
 					} // end switch analyzerType
 
-				} catch (IOException e) {
-					e.printStackTrace();
+				} catch (Exception e) {
+					System.err.println(e.getLocalizedMessage());
+					System.exit(1);
 				}
 			}
 		} catch (ParseException pex) {
 			System.err.println(pex.getLocalizedMessage());
 			System.exit(1);
 		}
+	}
+	
+	private Object[] tokenFiltersToParams(JSONArray tokenFilters) {
+		ArrayList<Object> params = new ArrayList<Object>();
+		if (null != tokenFilters && !tokenFilters.isEmpty()) {
+			tokenFilters.forEach(filter -> {
+				String filterType = ((JSONObject) filter).optString(KEY_TYPE);
+				if (null != filterType) {
+					System.out.println("Filter type: " + filterType);
+					JSONObject filterObj = (JSONObject) filter;
+					switch (filterType) {
+						case "daitchMokotoffSoundex":
+							// additional parameters: originalTokens
+							params.add(DaitchMokotoffSoundexFilterFactory.class);
+							if (filterObj.has("originalTokens")) {
+								params.add("inject");
+								params.add(filterObj.getString("originalTokens").equals("include") ? "true" : "false");
+							}
+							break;
+							
+						case "lowercase":
+							params.add(LowerCaseFilterFactory.class);
+							break;
+							
+						case "stopword":
+							params.add(AtlasSearchStopFilterFactory.class);
+							// additional parameters: tokens, ignoreCase
+							if (filterObj.has("tokens")) {
+								params.add("words");
+								JSONArray tokens = filterObj.optJSONArray("tokens");
+								params.add(tokens.join(",").replace("\"", ""));
+							}
+							if (filterObj.has("ignoreCase")) {
+								params.add("ignoreCase");
+								params.add(filterObj.getBoolean("ignoreCase"));
+							}
+							break;
+							
+						case "icuFolding":
+							params.add(ICUFoldingFilterFactory.class);
+							break;
+							
+						case "icuNormalizer":
+							params.add(ICUNormalizer2FilterFactory.class);
+							// additional parameters: normalizationForm
+							if (filterObj.has("normalizationForm")) {
+								params.add("name");
+								params.add(filterObj.getString("normalizationForm"));
+							}
+							break;
+							
+						case "length":
+							params.add(LengthFilterFactory.class);
+							// additional parameters: min, max
+							if (filterObj.has("min")) {
+								params.add("min");
+								params.add(filterObj.getInt("min"));
+								if (!filterObj.has("max")) {
+									params.add("max");
+									params.add(255);									
+								}
+							}
+							if (filterObj.has("max")) {
+								params.add("max");
+								params.add(filterObj.getInt("max"));
+								if (!filterObj.has("min")) {
+									params.add("min");
+									params.add(0);									
+								}
+							}
+							
+							break;
+							
+						case "nGram":
+							params.add(NGramFilterFactory.class);
+							// additional parameters: minGram, maxGram, termNotInBounds
+							if (filterObj.has("minGram")) {
+								params.add("minGramSize");
+								params.add(filterObj.getInt("minGram"));
+							}
+							if (filterObj.has("maxGram")) {
+								params.add("maxGramSize");
+								params.add(filterObj.getInt("maxGram"));
+							}
+							if (filterObj.has("termNotInBounds")) {
+								params.add("preserveOriginal");
+								params.add(filterObj.getString("termNotInBounds").equals("include") ? "true" : "false");
+							}
+							break;
+							
+						case "edgeGram":
+							params.add(EdgeNGramFilterFactory.class);
+							// additional parameters: minGram, maxGram, termNotInBounds
+							if (filterObj.has("minGram")) {
+								params.add("minGramSize");
+								params.add(filterObj.getInt("minGram"));
+							}
+							if (filterObj.has("maxGram")) {
+								params.add("maxGramSize");
+								params.add(filterObj.getInt("maxGram"));
+							}
+							if (filterObj.has("termNotInBounds")) {
+								params.add("preserveOriginal");
+								params.add(filterObj.getString("termNotInBounds").equals("include") ? "true" : "false");
+							}
+							break;
+							
+						case "shingle":
+							params.add(ShingleFilterFactory.class);
+							// additional parameters: minShingleSize, maxShingleSize
+							if (filterObj.has("minShingleSize")) {
+								params.add("minShingleSize");
+								params.add(filterObj.getInt("minShingleSize"));
+							}
+							if (filterObj.has("maxShingleSize")) {
+								params.add("maxShingleSize");
+								params.add(filterObj.getInt("maxShingleSize"));
+							}
+							break;
+							
+						case "regex":
+							params.add(PatternReplaceFilterFactory.class);
+							// additional parameters: pattern, replacement, matches
+							if (filterObj.has("pattern")) {
+								params.add("pattern");
+								params.add(filterObj.getString("pattern"));
+							}
+							if (filterObj.has("replacement")) {
+								params.add("replacement");
+								params.add(filterObj.getString("replacement"));
+							}
+							if (filterObj.has("matches")) {
+								params.add("replace");
+								params.add(filterObj.getString("matches"));
+							}
+							break;
+							
+						case "snowballStemming":
+							params.add(SnowballPorterFilterFactory.class);
+							// additional parameters: stemmerName
+							if (filterObj.has("stemmerName")) {
+								String language = filterObj.getString("stemmerName");
+								// capitalize
+								language = language.substring(0, 1).toUpperCase() + language.substring(1);
+								params.add("language");
+								params.add(language);
+							}
+
+							break;
+														
+						case "trim":
+							params.add(TrimFilterFactory.class);
+							break;
+							
+						default:
+							System.err.println(MessageFormat.format(
+								"Unknown filter type ''{0}'' -- {1}",
+								filterType, FILTER_TYPE_HELP));
+					}
+				}
+			});
+		}
 		
+		Object[] objs = new Object[params.size()];
+		objs = params.toArray(objs);
+		return objs;
+	}
+	
+	private String[] charFiltersToParams(JSONArray charFilters, String charFilterType) {
+		ArrayList<String> params = new ArrayList<String>();
+
+		if (null != charFilters && !charFilters.isEmpty()) {
+			charFilterType = ((JSONObject)charFilters.get(0)).getString(KEY_TYPE);
+			if (charFilterType.equals("htmlStrip")) {
+				JSONArray ignoredTags = ((JSONObject)charFilters.get(0)).optJSONArray(KEY_IGNORED_TAGS);
+				if (!ignoredTags.isEmpty()) {
+					params.add(KEY_ESCAPED_TAGS);
+					params.add(ignoredTags.join(",").replace("\"", ""));
+				}
+			} else if (charFilterType.equals("mapping")) {
+				charFilters.forEach(filter -> {
+					JSONObject mappings = ((JSONObject)filter).optJSONObject(KEY_MAPPINGS);
+					mappings.toMap().entrySet().forEach(entry -> {
+						String mapping = "\"" + entry.getKey() + "\" => \"" + entry.getValue() + "\"";
+						params.add(KEY_MAPPING);
+						params.add(mapping);
+					});
+				});
+			}
+		}
 		
-/**		
+		String[] strs = new String[params.size()];
+		strs = params.toArray(strs);
+		return strs;
+	}
+	
+	private JSONObject readJsonFile(String filename, String analyzerName) throws Exception{		
+		JSONTokener tokener = new JSONTokener(Files.newInputStream(Path.of(filename)));
+		JSONObject jsonObject = new JSONObject(tokener);
+
+		if (jsonObject.has(KEY_ANALYZERS)) {
+			JSONArray analyzers = (JSONArray) jsonObject.get(KEY_ANALYZERS);
+			if (null != analyzers) {
+				List<JSONObject> names = (List<JSONObject>) StreamSupport.stream(analyzers.spliterator(), false)
+					.map(val -> (JSONObject) val)
+					.filter(val -> ((JSONObject) val).get(KEY_NAME).equals(analyzerName))
+					.collect(Collectors.toList());
+				if (names.size() > 0) {
+					return (JSONObject)names.get(0);
+				} else {
+					throw new ParseException(MessageFormat.format("Index definition file ''{0}'' does not contain a custom analyzer named ''{1}''", filename, analyzerName));
+				}
+			}
+		} else {
+			throw new ParseException(MessageFormat.format("Index definition file ''{0}'' is missing an ''{1}'' field", filename, KEY_ANALYZERS));
+		}
 		
-		
-*/
+		return null;
 	}
 
 	private String readFile(String filename) {
@@ -336,10 +672,15 @@ public class LuceneAnalyzer {
 		CharTermAttribute cattr = stream.addAttribute(CharTermAttribute.class);
 		stream.reset();
 		System.out.println(MessageFormat.format("Using {0}", analyzer.getClass().getName()));
+		StringBuffer output = new StringBuffer();
+		
 		while (stream.incrementToken()) {
-			System.out.print("[" + cattr.toString() + "] ");
+			output.append("[" + cattr.toString() + "] ");
 		}
-		System.out.println();
+		if (output.length() == 0) {
+			output.append("[]");
+		}
+		System.out.println(output.toString());
 		stream.end();
 		stream.close();
 	}

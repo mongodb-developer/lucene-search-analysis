@@ -30,13 +30,25 @@
 		<dependency>
 			<groupId>org.apache.lucene</groupId>
 			<artifactId>lucene-core</artifactId>
-			<version>8.6.2</version>
+			<version>8.9.0</version>
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/org.apache.lucene/lucene-analyzers-common -->
 		<dependency>
 			<groupId>org.apache.lucene</groupId>
 			<artifactId>lucene-analyzers-common</artifactId>
-			<version>8.6.2</version>
+			<version>8.9.0</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.apache.lucene/lucene-analyzers-icu -->
+		<dependency>
+			<groupId>org.apache.lucene</groupId>
+			<artifactId>lucene-analyzers-icu</artifactId>
+			<version>8.9.0</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.apache.lucene/lucene-analyzers-phonetic -->
+		<dependency>
+			<groupId>org.apache.lucene</groupId>
+			<artifactId>lucene-analyzers-phonetic</artifactId>
+			<version>8.9.0</version>
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/commons-cli/commons-cli -->
 		<dependency>
@@ -44,11 +56,17 @@
 			<artifactId>commons-cli</artifactId>
 			<version>1.4</version>
 		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.json/json -->
+		<dependency>
+			<groupId>org.json</groupId>
+			<artifactId>json</artifactId>
+			<version>20210307</version>
+		</dependency>
 	</dependencies>
 
 	<build>
-	<!-- lock down plugins versions to avoid using Maven 
-				defaults (may be moved to parent pom) -->
+		<!-- lock down plugins versions to avoid using Maven defaults (may be moved 
+			to parent pom) -->
 		<pluginManagement>
 			<plugins>
 				<!-- clean lifecycle, see https://maven.apache.org/ref/current/maven-core/lifecycles.html#clean_Lifecycle -->

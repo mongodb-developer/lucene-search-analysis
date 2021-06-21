@@ -17,8 +17,10 @@ Use the command `mvn exec:java -Dexec.args="<options>"` with the appropriate opt
 ```
 usage: mvn exec:java -Dexec.args="<options>"
  -a,--analyzer <arg>   Lucene analyzer to use (defaults to 'Standard')
+ -d,--definition <arg> Atlas Search index definition JSON file
  -f,--file <arg>       Input text file to analyze
  -h,--help             Prints this message
+ -n,--name <arg>       Name of custom analyzer to use from index definition file
  -l,--language <arg>   Language code (used with '--analyzer Language' only
  -t,--text <arg>       Input text to analyze
 ```
@@ -70,3 +72,67 @@ mvn -q exec:java -Dexec.args="-a language -l fr -f french.txt"
 Using org.apache.lucene.analysis.fr.FrenchAnalyzer
 [bonjou] [apel] [roy] [kiesl]
 ```
+
+### Analyze text using a custom analyzer
+
+**Sample 1**
+
+```bash
+cat <<EOF >> mappings.json
+{
+	"analyzers": [
+		{
+			"name": "romanAnalyzer",
+			"charFilters": [
+				{
+					"type": "mapping",
+					"mappings": {
+						"V": "5",
+						"ii": "2",
+						"II": "2"
+					}
+				}
+			],
+			"tokenizer": {
+				"type": "keyword"
+			},
+			"tokenFilters": [
+				{
+					"type": "lowercase"
+				}
+			]
+		}
+	],
+	"mappings": {
+		"dynamic": true
+	}
+}EOF
+
+mvn -q exec:java -Dexec.args="-a custom -t 'rocky ii' -d mappings.json -n romanAnalyzer"
+Using org.apache.lucene.analysis.custom.CustomAnalyzer
+[rocky] [ii]
+```
+
+**Sample 2**
+
+```bash
+cat <<EOF >> mappings.json
+{
+	"name": "htmlStrippingAnalyzer",
+	"charFilters": [
+		{
+			"type": "htmlStrip",
+			"ignoredTags": [
+				"a", "p"
+			]
+		}
+	],
+	"tokenizer": {
+		"type": "standard"
+	},
+	"tokenFilters": []
+}EOF
+
+mvn -q exec:java -Dexec.args="-a custom -t '<div><p>This is an <a href="foo.com">HTML</a> test</p></div>' -d mappings.json -n htmlStrippingAnalyzer"
+Using org.apache.lucene.analysis.custom.CustomAnalyzer
+[p] [This] [is] [an] [a] [href] [foo.com] [HTML] [a] [test] [p]
