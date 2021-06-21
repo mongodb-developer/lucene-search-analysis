@@ -82,7 +82,7 @@ import org.json.JSONTokener;
 
 public class LuceneAnalyzer {
 	private static final String ANALYZER_HELP     = 
-		"Analyzer must be one of [Standard, Simple, Whitespace, Language, Keyword]";
+		"Analyzer must be one of [Standard, Simple, Whitespace, Language, Keyword, Custom]";
 	private static final String LANG_CODE_HELP    = 
 		"Language code must be one of [ar, bg, bn, br, ca, cjk, ckb, cz, da, de, el, en, es, et, fa, fi, fr, ga, gl, hi, hu, hy, id, it, lt, lv, nl, no, ro, ru, sv, th, tr]";
 	private static final String FILTER_TYPE_HELP  =
@@ -126,7 +126,7 @@ public class LuceneAnalyzer {
 		inputGroup.addOption(fileOpt).addOption(textOpt).setRequired(true);
 		helpOptions.addOptionGroup(inputGroup);
 		OptionGroup customGroup = new OptionGroup();
-		customGroup.addOption(defOpt).setRequired(true);
+		customGroup.addOption(defOpt).setRequired(false);
 		helpOptions.addOptionGroup(customGroup);
 
 		try {
