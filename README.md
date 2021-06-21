@@ -108,7 +108,7 @@ cat <<EOF >> index.json
 	}
 }EOF
 
-mvn -q exec:java -Dexec.args="-a custom -t 'rocky ii' -d mappings.json -n romanAnalyzer"
+mvn -q exec:java -Dexec.args="-a custom -t 'rocky ii' -d index.json -n romanAnalyzer"
 Using org.apache.lucene.analysis.custom.CustomAnalyzer
 [rocky] [ii]
 ```
@@ -133,6 +133,6 @@ cat <<EOF >> index.json
 	"tokenFilters": []
 }EOF
 
-mvn -q exec:java -Dexec.args="-a custom -t '<div><p>This is an <a href="foo.com">HTML</a> test</p></div>' -d mappings.json -n htmlStrippingAnalyzer"
+mvn -q exec:java -Dexec.args="-a custom -t '<div><p>This is an <a href="foo.com">HTML</a> test</p></div>' -d index.json -n htmlStrippingAnalyzer"
 Using org.apache.lucene.analysis.custom.CustomAnalyzer
 [p] [This] [is] [an] [a] [href] [foo.com] [HTML] [a] [test] [p]
