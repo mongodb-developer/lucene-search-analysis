@@ -156,6 +156,8 @@ public class LuceneAnalyzer {
 				}
 					
 				// parse input text
+				inputGroup.setRequired(true);
+				helpOptions.addOptionGroup(inputGroup);
 				cmd = parser.parse(helpOptions, args, true);
 				String text = null != cmd && cmd.hasOption(textOpt.getOpt()) ? cmd.getOptionValue(textOpt.getOpt())
 					: null != cmd && cmd.hasOption(fileOpt.getOpt()) ? tester.readFile(cmd.getOptionValue(fileOpt.getOpt())) : null;
@@ -346,11 +348,11 @@ public class LuceneAnalyzer {
 							helpOptions.addOptionGroup(customGroup);
 							cmd = parser.parse(helpOptions, args, true);
 							
-							//String selected = customGroup.getSelected();
-							//if (null == selected || selected.trim().length() == 0) {
-							//	System.err.println("Index definition file is required (-d)");
-							//	System.exit(1);
-							//}
+							String selected = customGroup.getSelected();
+							if (null == selected || selected.trim().length() == 0) {
+								System.err.println("Index definition file is required (-d)");
+								System.exit(1);
+							}
 		
 							if (customGroup.getSelected().equals(defOpt.getOpt())) {
 								JSONObject def = null != cmd && cmd.hasOption(defOpt.getOpt()) && cmd.hasOption(nameOpt.getOpt()) ? tester.readJsonFile(cmd.getOptionValue(defOpt.getOpt()), cmd.getOptionValue(nameOpt.getOpt())) : null;
