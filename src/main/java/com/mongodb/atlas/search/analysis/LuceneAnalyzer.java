@@ -3,6 +3,7 @@ package com.mongodb.atlas.search.analysis;
 import java.io.IOException;
 import java.io.StringReader;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.List;
@@ -109,7 +110,7 @@ public class LuceneAnalyzer {
 		Option textOpt = Option.builder("t").longOpt("text").hasArg().desc("Input text to analyze").build();
 		Option fileOpt = Option.builder("f").longOpt("file").hasArg().desc("Input text file to analyze").build();
 		Option helpOpt = Option.builder("h").longOpt("help").desc("Prints this message").build();
-		Option defOpt = Option.builder("d").longOpt("definition").hasArg().desc("Custom analyzer definition file").build();
+		Option defOpt  = Option.builder("d").longOpt("definition").hasArg().desc("Index definition file containing custom analyzer").build();
 		Option nameOpt = Option.builder("n").longOpt("name").hasArg().desc("Custom analyzer name").build();
 
 		CommandLineParser parser = new DefaultParser();
@@ -123,12 +124,14 @@ public class LuceneAnalyzer {
 			.addOption(nameOpt);
 		
 		OptionGroup inputGroup = new OptionGroup();
-		inputGroup.addOption(fileOpt).addOption(textOpt).setRequired(true);
+		inputGroup.addOption(fileOpt).addOption(textOpt);
 		helpOptions.addOptionGroup(inputGroup);
+		
 		OptionGroup customGroup = new OptionGroup();
-		customGroup.addOption(defOpt).setRequired(false);
+		customGroup.addOption(defOpt);
 		helpOptions.addOptionGroup(customGroup);
 
+		
 		try {
 			// parse help
 			cmd = parser.parse(helpOptions, args, true);
@@ -339,14 +342,23 @@ public class LuceneAnalyzer {
 							
 
 						case "custom":
+							customGroup.setRequired(true);
+							helpOptions.addOptionGroup(customGroup);
 							cmd = parser.parse(helpOptions, args, true);
+							
+							//String selected = customGroup.getSelected();
+							//if (null == selected || selected.trim().length() == 0) {
+							//	System.err.println("Index definition file is required (-d)");
+							//	System.exit(1);
+							//}
+		
 							if (customGroup.getSelected().equals(defOpt.getOpt())) {
 								JSONObject def = null != cmd && cmd.hasOption(defOpt.getOpt()) && cmd.hasOption(nameOpt.getOpt()) ? tester.readJsonFile(cmd.getOptionValue(defOpt.getOpt()), cmd.getOptionValue(nameOpt.getOpt())) : null;
 								if (null == def) {
 									throw new ParseException(MessageFormat.format("File ''{0}'' cannot be null or empty", cmd.getOptionValue(defOpt.getOpt())));
 								}
 								
-								System.out.println(def.toString(2));
+								//System.out.println(def.toString(2));
 								Builder builder = CustomAnalyzer.builder()
 									.withTokenizer(def.optJSONObject(KEY_TOKENIZER).getString(KEY_TYPE));
 								
@@ -444,7 +456,6 @@ public class LuceneAnalyzer {
 			tokenFilters.forEach(filter -> {
 				String filterType = ((JSONObject) filter).optString(KEY_TYPE);
 				if (null != filterType) {
-					System.out.println("Filter type: " + filterType);
 					JSONObject filterObj = (JSONObject) filter;
 					switch (filterType) {
 						case "daitchMokotoffSoundex":
@@ -632,8 +643,15 @@ public class LuceneAnalyzer {
 		return strs;
 	}
 	
-	private JSONObject readJsonFile(String filename, String analyzerName) throws Exception{		
-		JSONTokener tokener = new JSONTokener(Files.newInputStream(Path.of(filename)));
+	private JSONObject readJsonFile(String filename, String analyzerName) throws Exception{
+		JSONTokener tokener = null;
+		
+		try {
+			tokener = new JSONTokener(Files.newInputStream(Path.of(filename)));
+		} catch (NoSuchFileException nsfx) {
+			System.err.println("File not found");
+			throw nsfx;
+		}
 		JSONObject jsonObject = new JSONObject(tokener);
 
 		if (jsonObject.has(KEY_ANALYZERS)) {
