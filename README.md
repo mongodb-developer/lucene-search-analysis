@@ -20,8 +20,8 @@ usage: mvn exec:java -Dexec.args="<options>"
  -d,--definition <arg> Atlas Search index definition JSON file
  -f,--file <arg>       Input text file to analyze
  -h,--help             Prints this message
- -n,--name <arg>       Name of custom analyzer to use from index definition file
  -l,--language <arg>   Language code (used with '--analyzer Language' only
+ -n,--name <arg>       Name of custom analyzer to use from index definition file
  -t,--text <arg>       Input text to analyze
 ```
 

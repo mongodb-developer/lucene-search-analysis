@@ -361,9 +361,13 @@ public class LuceneAnalyzer {
 								}
 								
 								//System.out.println(def.toString(2));
-								Builder builder = CustomAnalyzer.builder()
-									.withTokenizer(def.optJSONObject(KEY_TOKENIZER).getString(KEY_TYPE));
 								
+								String tokenizerType = def.optJSONObject(KEY_TOKENIZER).getString(KEY_TYPE);
+								if (tokenizerType.equals("uaxUrlEmail")) {
+									tokenizerType = "uax29UrlEmail";	// Atlas Search omits the "29"
+								}
+								Builder builder = CustomAnalyzer.builder()
+									.withTokenizer(tokenizerType);
 								JSONArray tokenFilters = def.optJSONArray(KEY_TOKEN_FILTERS);
 								if (null != tokenFilters && !tokenFilters.isEmpty()) {
 									Object[] objs = tester.tokenFiltersToParams(tokenFilters);
@@ -419,6 +423,8 @@ public class LuceneAnalyzer {
 											.addCharFilter(charFilterClass, strs)
 											.build();
 									}
+								} else {
+									analyzer = builder.build();									
 								}
 								
 								if (null != analyzer) {
