@@ -88,9 +88,20 @@ public class LuceneAnalyzer {
 		"Language code must be one of [ar, bg, bn, br, ca, cjk, ckb, cz, da, de, el, en, es, et, fa, fi, fr, ga, gl, hi, hu, hy, id, it, lt, lv, nl, no, ro, ru, sv, th, tr]";
 	private static final String FILTER_TYPE_HELP  =
 		"Filter type must be one of [lowercase, length, icuFolding, icuNormalizer, nGram, edgeGram, shingle, regex, snowballStemming, stopword, trim]";
+	private static final String OPERATOR_HELP     = 
+		"Operator must be one of [autocomplete, text]";
+	private static final String TOKENIZER_HELP     = 
+		"Tokenizer must be one of [edgeGram, nGram]";
+	private static final String MIN_GRAM_HELP     = 
+		"minGram value must be an integer greater than or equal to 1";
+	private static final String MAX_GRAM_HELP     = 
+		"maxGram value must be greater than or equal to the value of minGram";
 	private static final String LIST_OPT          = "list";
 	private static final String KEY_ANALYZERS     = "analyzers";
+	private static final String KEY_AUTOCOMPLETE  = "autocomplete";
 	private static final String KEY_TOKENIZER     = "tokenizer";
+	private static final String KEY_MIN_GRAMS     = "minGrams";
+	private static final String KEY_MAX_GRAMS     = "maxGrams";
 	private static final String KEY_CHAR_FILTERS  = "charFilters";
 	private static final String KEY_TOKEN_FILTERS = "tokenFilters";
 	private static final String KEY_MAPPING       = "mapping";
@@ -107,6 +118,10 @@ public class LuceneAnalyzer {
 		// options
 		Option analyzerOpt = Option.builder("a").longOpt("analyzer").hasArg().desc("Lucene analyzer to use (defaults to 'Standard'). Use 'list' for supported analyzer names.").build();
 		Option langOpt = Option.builder("l").longOpt("language").hasArg().desc("Language code (used with '--analyzer=Language' only.  Use 'list' for supported language codes.").build();
+		Option operatorOpt = Option.builder("o").longOpt("operator").hasArg().desc("Query operator to use (defaults to 'text'). Use 'list' for supported operator names.").build();
+		Option tokenizerOpt = Option.builder("k").longOpt("tokenizer").hasArg().desc("Tokeniser to use with autocomplete operator (defaults to 'edgeGram'). Use 'list' for supported tokenizer names.").build();
+		Option minGramOpt = Option.builder("m").longOpt("minGrams").hasArg().desc("Minimum number of characters per indexed sequence to use with autocomplete operator (defaults to '2').").build();
+		Option maxGramOpt = Option.builder("x").longOpt("maxGrams").hasArg().desc("Maximum number of characters per indexed sequence to use with autocomplete operator (defaults to '3').").build();
 		Option textOpt = Option.builder("t").longOpt("text").hasArg().desc("Input text to analyze").build();
 		Option fileOpt = Option.builder("f").longOpt("file").hasArg().desc("Input text file to analyze").build();
 		Option helpOpt = Option.builder("h").longOpt("help").desc("Prints this message").build();
@@ -121,7 +136,11 @@ public class LuceneAnalyzer {
 		helpOptions.addOption(helpOpt)
 			.addOption(analyzerOpt)
 			.addOption(langOpt)
-			.addOption(nameOpt);
+			.addOption(nameOpt)
+			.addOption(operatorOpt)
+			.addOption(tokenizerOpt)
+			.addOption(minGramOpt)
+			.addOption(maxGramOpt);
 		
 		OptionGroup inputGroup = new OptionGroup();
 		inputGroup.addOption(fileOpt).addOption(textOpt);
@@ -155,6 +174,31 @@ public class LuceneAnalyzer {
 					System.exit(0);
 				}
 					
+				// parse operator and tokenizer options
+				cmd = parser.parse(helpOptions, args, true);
+				String operatorName = (null != cmd && cmd.hasOption(operatorOpt.getOpt()) ? cmd.getOptionValue(operatorOpt.getOpt()) : "text").toLowerCase();
+				if (operatorName.equals(LIST_OPT)) {
+					System.out.println(OPERATOR_HELP);
+					System.exit(0);
+				}
+				String tokenizerName = (null != cmd && cmd.hasOption(tokenizerOpt.getOpt()) ? cmd.getOptionValue(tokenizerOpt.getOpt()) : "nGram");
+				if (tokenizerName.equals(LIST_OPT)) {
+					System.out.println(TOKENIZER_HELP);
+					System.exit(0);
+				} else if (tokenizerName.equalsIgnoreCase("edgegram")) {
+					tokenizerName = "edgeNGram";
+				}
+				String minGrams = (null != cmd && cmd.hasOption(minGramOpt.getOpt()) ? cmd.getOptionValue(minGramOpt.getOpt()) : "2");
+				if (Integer.parseInt(minGrams) < 1) {
+					System.out.println(MIN_GRAM_HELP);
+					System.exit(0);
+				}
+				String maxGrams = (null != cmd && cmd.hasOption(maxGramOpt.getOpt()) ? cmd.getOptionValue(maxGramOpt.getOpt()) : "3");
+				if (Integer.parseInt(maxGrams) < Integer.parseInt(minGrams)) {
+					System.out.println(MAX_GRAM_HELP);
+					System.exit(0);
+				}
+				
 				// parse input text
 				inputGroup.setRequired(true);
 				helpOptions.addOptionGroup(inputGroup);
@@ -174,22 +218,22 @@ public class LuceneAnalyzer {
 					switch (analyzerType) {
 						case "simple":
 							analyzer = new SimpleAnalyzer();
-							tester.displayTokens(analyzer, text);
+							tester.displayTokens(analyzer, text, operatorName, tokenizerName, minGrams, maxGrams);
 							break;
 			
 						case "standard":
 							analyzer = new StandardAnalyzer();
-							tester.displayTokens(analyzer, text);
+							tester.displayTokens(analyzer, text, operatorName, tokenizerName, minGrams, maxGrams);
 							break;
 			
 						case "whitespace":
 							analyzer = new WhitespaceAnalyzer();
-							tester.displayTokens(analyzer, text);
+							tester.displayTokens(analyzer, text, operatorName, tokenizerName, minGrams, maxGrams);
 							break;
 			
 						case "keyword":
 							analyzer = new KeywordAnalyzer();
-							tester.displayTokens(analyzer, text);
+							tester.displayTokens(analyzer, text, operatorName, tokenizerName, minGrams, maxGrams);
 							break;
 			
 						case "language":
@@ -334,7 +378,7 @@ public class LuceneAnalyzer {
 										System.exit(1);
 								} // end switch langCode
 
-								tester.displayTokens(analyzer, text);						
+								tester.displayTokens(analyzer, text, operatorName, tokenizerName, minGrams, maxGrams);						
 							} else {
 								System.err.println(MessageFormat.format(
 									"Analyzer language is required -- {0}", LANG_CODE_HELP));
@@ -428,7 +472,7 @@ public class LuceneAnalyzer {
 								}
 								
 								if (null != analyzer) {
-									tester.displayTokens(analyzer, text);
+									tester.displayTokens(analyzer, text, operatorName, tokenizerName, minGrams, maxGrams);
 								} else {
 									System.out.println("Analyzer not built yet");
 								}
@@ -693,11 +737,26 @@ public class LuceneAnalyzer {
 		return content;
 	}
 
-	private void displayTokens(Analyzer analyzer, String text) throws IOException {
+	private void displayTokens(
+		Analyzer analyzer,
+		String text,
+		String operatorName,
+		String tokenizer,
+		String minGrams,
+		String maxGrams) throws IOException {
+		if (null != operatorName && operatorName.equalsIgnoreCase(KEY_AUTOCOMPLETE)) {
+			Builder builder = CustomAnalyzer.builder().withTokenizer(
+				tokenizer, "minGramSize", minGrams, "maxGramSize", maxGrams);
+			analyzer = builder.build();
+		}
 		TokenStream stream = analyzer.tokenStream(null, new StringReader(text));
 		CharTermAttribute cattr = stream.addAttribute(CharTermAttribute.class);
 		stream.reset();
 		System.out.println(MessageFormat.format("Using {0}", analyzer.getClass().getName()));
+		if (operatorName.equalsIgnoreCase(KEY_AUTOCOMPLETE)) {
+			System.out.println(MessageFormat.format(
+				"Autocomplete - {0}, minGram({1}), maxGram({2})", tokenizer, minGrams, maxGrams));
+		}
 		StringBuffer output = new StringBuffer();
 		
 		while (stream.incrementToken()) {
@@ -711,3 +770,5 @@ public class LuceneAnalyzer {
 		stream.close();
 	}
 }
+
+	

@@ -16,14 +16,26 @@ Use the command `mvn exec:java -Dexec.args="<options>"` with the appropriate opt
 
 ```
 usage: mvn exec:java -Dexec.args="<options>"
- -a,--analyzer <arg>   Lucene analyzer to use (defaults to 'Standard')
- -d,--definition <arg> Atlas Search index definition JSON file
- -f,--file <arg>       Input text file to analyze
- -h,--help             Prints this message
- -l,--language <arg>   Language code (used with '--analyzer Language' only
- -n,--name <arg>       Name of custom analyzer to use from index definition file
- -t,--text <arg>       Input text to analyze
-```
+ -h, --help               Prints this message
+ -a, --analyzer <arg>     Lucene analyzer to use (defaults to 'Standard').
+                         Use 'list' for supported analyzer names.
+ -d, --definition <arg>   Index definition file containing custom analyzer
+ -t, --text <arg>         Input text to analyze
+ -f, --file <arg>         Input text file to analyze
+ -l, --language <arg>     Language code (used with '--analyzer=Language'
+                         only.  Use 'list' for supported language codes.
+ -n, --name <arg>         Custom analyzer name
+ -o, --operator <arg>     Query operator to use (defaults to 'text'). Use
+                         'list' for supported operator names.
+ -k, --tokenizer <arg>    Tokeniser to use with autocomplete operator
+                         (defaults to 'edgeGram'). Use 'list' for
+                         supported tokenizer names.
+ -m, --minGrams <arg>     Minimum number of characters per indexed sequence
+                         to use with autocomplete operator (defaults to
+                         '2').
+ -x, --maxGrams <arg>     Maximum number of characters per indexed sequence
+                         to use with autocomplete operator (defaults to
+                         '3').```
 
 You can also use `java -cp lib/ -jar <path-to>/atlas-search-analysis-0.0.1.jar <options>` (Java 11 or later)
 
@@ -136,3 +148,24 @@ cat <<EOF >> index.json
 mvn -q exec:java -Dexec.args="-a custom -t '<div><p>This is an <a href="foo.com">HTML</a> test</p></div>' -d index.json -n htmlStrippingAnalyzer"
 Using org.apache.lucene.analysis.custom.CustomAnalyzer
 [p] [This] [is] [an] [a] [href] [foo.com] [HTML] [a] [test] [p]
+```
+
+### Analyze text using autocomplete
+
+**Sample 1**
+
+```bash
+mvn exec:java -Dexec.args="-t 'Ribeira Charming Duplex' -o autocomplete"
+Using org.apache.lucene.analysis.custom.CustomAnalyzer
+Autocomplete - nGram, minGram(2), maxGram(3)
+[Ri] [Rib] [ib] [ibe] [be] [bei] [ei] [eir] [ir] [ira] [ra] [ra ] [a ] [a C] [ C] [ Ch] [Ch] [Cha] [ha] [har] [ar] [arm] [rm] [rmi] [mi] [min] [in] [ing] [ng] [ng ] [g ] [g D] [ D] [ Du] [Du] [Dup] [up] [upl] [pl] [ple] [le] [lex] [ex]
+```
+
+**Sample 2**
+
+```bash
+mvn exec:java -Dexec.args="-t 'Ribeira Charming Duplex' -o autocomplete -k nGram -m 1 -x 2mvn exec:java -Dexec.args="-t 'Ribeira Charming Duplex' -o autocomplete -k edgeGram -m 2 -x 15"
+Using org.apache.lucene.analysis.custom.CustomAnalyzer
+Autocomplete - edgeNGram, minGram(2), maxGram(15)
+[Ri] [Rib] [Ribe] [Ribei] [Ribeir] [Ribeira] [Ribeira ] [Ribeira C] [Ribeira Ch] [Ribeira Cha] [Ribeira Char] [Ribeira Charm] [Ribeira Charmi] [Ribeira Charmin]
+```
