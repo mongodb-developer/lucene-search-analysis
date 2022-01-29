@@ -164,7 +164,7 @@ Autocomplete - nGram, minGram(2), maxGram(3)
 **Sample 2**
 
 ```bash
-mvn exec:java -Dexec.args="-t 'Ribeira Charming Duplex' -o autocomplete -k nGram -m 1 -x 2mvn exec:java -Dexec.args="-t 'Ribeira Charming Duplex' -o autocomplete -k edgeGram -m 2 -x 15"
+mvn exec:java -Dexec.args="-t 'Ribeira Charming Duplex' -o autocomplete -k edgeGram -m 2 -x 15"
 Using org.apache.lucene.analysis.custom.CustomAnalyzer
 Autocomplete - edgeNGram, minGram(2), maxGram(15)
 [Ri] [Rib] [Ribe] [Ribei] [Ribeir] [Ribeira] [Ribeira ] [Ribeira C] [Ribeira Ch] [Ribeira Cha] [Ribeira Char] [Ribeira Charm] [Ribeira Charmi] [Ribeira Charmin]

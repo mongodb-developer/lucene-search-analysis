@@ -64,6 +64,7 @@ import org.apache.lucene.analysis.nl.DutchAnalyzer;
 import org.apache.lucene.analysis.no.NorwegianAnalyzer;
 import org.apache.lucene.analysis.pattern.PatternReplaceFilterFactory;
 import org.apache.lucene.analysis.phonetic.DaitchMokotoffSoundexFilterFactory;
+import org.apache.lucene.analysis.reverse.ReverseStringFilterFactory;
 import org.apache.lucene.analysis.ro.RomanianAnalyzer;
 import org.apache.lucene.analysis.ru.RussianAnalyzer;
 import org.apache.lucene.analysis.shingle.ShingleFilterFactory;
@@ -79,6 +80,7 @@ import org.apache.lucene.analysis.custom.CustomAnalyzer.Builder;
 
 import org.json.JSONObject;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONTokener;
 
 public class LuceneAnalyzer {
@@ -407,11 +409,27 @@ public class LuceneAnalyzer {
 								//System.out.println(def.toString(2));
 								
 								String tokenizerType = def.optJSONObject(KEY_TOKENIZER).getString(KEY_TYPE);
+								ArrayList<String> tokenizerParams = new ArrayList<>();
 								if (tokenizerType.equals("uaxUrlEmail")) {
 									tokenizerType = "uax29UrlEmail";	// Atlas Search omits the "29"
+								} else if (tokenizerType.equals("regexCaptureGroup")) {
+									tokenizerType = "pattern";
+									try {
+										String pattern = def.optJSONObject(KEY_TOKENIZER).getString("pattern");
+										tokenizerParams.add("pattern");
+										tokenizerParams.add(pattern);
+										int group = def.optJSONObject(KEY_TOKENIZER).getInt("group");
+										tokenizerParams.add("group");
+										tokenizerParams.add(Integer.toString(group));
+									} catch (JSONException jex) {
+										throw new ParseException(jex.getLocalizedMessage());								
+									}
 								}
+
+								String[] tokenizerStrs = new String[tokenizerParams.size()];
+								tokenizerStrs = tokenizerParams.toArray(tokenizerStrs);
 								Builder builder = CustomAnalyzer.builder()
-									.withTokenizer(tokenizerType);
+									.withTokenizer(tokenizerType, tokenizerStrs);
 								JSONArray tokenFilters = def.optJSONArray(KEY_TOKEN_FILTERS);
 								if (null != tokenFilters && !tokenFilters.isEmpty()) {
 									Object[] objs = tester.tokenFiltersToParams(tokenFilters);
@@ -468,7 +486,7 @@ public class LuceneAnalyzer {
 											.build();
 									}
 								} else {
-									analyzer = builder.build();									
+									analyzer = builder.build();
 								}
 								
 								if (null != analyzer) {
@@ -651,6 +669,11 @@ public class LuceneAnalyzer {
 														
 						case "trim":
 							params.add(TrimFilterFactory.class);
+							break;
+							
+						case "reverse":
+							params.add(ReverseStringFilterFactory.class);
+							// TODO: more???
 							break;
 							
 						default:
