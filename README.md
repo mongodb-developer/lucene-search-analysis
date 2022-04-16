@@ -12,7 +12,7 @@ The UI for this tool is implemented as a [Vaadin](https://vaadin.com/) web appli
 
 ## Run
 
-Use the command `mvnw` from the directory containing `pom.xml` to launch the Web UI on port 8080.
+Use the command `mvnw -Dspring-boot.run.jvmArguments="-Dspring.devtools.restart.enabled=false"` from the directory containing `pom.xml` to launch the Web UI on port 8080.
 
 ![Web UI](src/main/resources/vaadin_app.png)
 
