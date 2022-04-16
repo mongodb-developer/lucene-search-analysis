@@ -1,3 +1,8 @@
 target/
 french.txt
 mappings.json
+.settings
+.project
+.classpath
+node_modules
+.DS_Store

@@ -1,0 +1,54 @@
+{
+	"analyzers": [
+		{
+			"name": "romanAnalyzer",
+			"charFilters": [
+				{
+					"type": "mapping",
+					"mappings": {
+						"V": "5",
+						"ii": "2",
+						"II": "2"
+					}
+				}
+			],
+			"tokenizer": {
+				"type": "standard"
+			},
+			"tokenFilters": [
+				{
+					"type": "lowercase"
+				},
+				{
+					"type": "length",
+					"max": 8
+				},
+				{
+					"type": "stopword",
+					"tokens": [
+						"IS",
+						"the",
+						"than"
+					],
+					"ignoreCase": true
+				},
+				{
+					"type": "snowballStemming",
+					"stemmerName": "english"
+				},
+				{
+					"type": "icuFolding"
+				},
+				{
+					"matches": "all",
+					"pattern": "^(roc)(.*\\s+\\d)$",
+					"replacement": "***",
+					"type": "regex"
+				}
+			]
+		}
+	],
+	"mappings": {
+		"dynamic": true
+	}
+}
