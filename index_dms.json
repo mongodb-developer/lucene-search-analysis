@@ -1,0 +1,21 @@
+{
+  "analyzer": "dmsAnalyzer",
+  "searchAnalyzer": "dmsAnalyzer",
+  "mappings": {
+    "dynamic": true
+  },
+  "analyzers": [
+    {
+      "name": "dmsAnalyzer",
+      "tokenizer": {
+        "type": "standard"
+      },
+      "tokenFilters": [
+        {
+          "type": "daitchMokotoffSoundex",
+          "originalTokens": "include"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "analyzer": "camelCase",
+  "mappings": {
+    "dynamic": true
+  },
+  "analyzers": [
+    {
+      "name": "camelCase",
+      "charFilters": [],
+      "tokenizer": {
+        "type": "regexCaptureGroup",
+        "pattern": "^[a-z]+([A-Z][a-z0-9]+)*$",
+        "group": 1
+      },
+      "tokenFilters": []
+    }
+  ]
+}

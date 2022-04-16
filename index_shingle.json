@@ -1,0 +1,23 @@
+ {
+  "analyzers": [
+    {
+      "name": "shingleAnalyzer",
+      "tokenizer": {
+        "maxTokenLength": 15,
+        "type": "whitespace"
+      },
+      "tokenFilters": [
+        {
+          "maxShingleSize": 3,
+          "minShingleSize": 2,
+          "type": "shingle"
+        },
+        {
+          "maxGram": 7,
+          "minGram": 3,
+          "type": "nGram"
+        }
+      ]
+    }
+  ]
+}

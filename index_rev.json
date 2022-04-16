@@ -1,0 +1,20 @@
+{
+    "analyzers": [
+        {
+            "name": "reverseAnalyzer",
+            "charFilters": [
+            ],
+            "tokenizer": {
+                "type": "keyword"
+            },
+            "tokenFilters": [
+                {
+                    "type": "reverse"
+                }
+            ]
+        }
+    ],
+    "mappings": {
+        "dynamic": true
+    }
+}

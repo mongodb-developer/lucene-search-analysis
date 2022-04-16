@@ -1,0 +1,18 @@
+{
+    "analyzers": [
+    {
+	    "name": "htmlStrippingAnalyzer",
+	    "charFilters": [
+	        {
+	            "type": "htmlStrip",
+	            "ignoredTags": [
+	                "a", "p"
+	            ]
+	        }
+	    ],
+	    "tokenizer": {
+	        "type": "standard"
+	    },
+	    "tokenFilters": []
+	}]
+}

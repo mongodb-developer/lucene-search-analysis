@@ -1,0 +1,18 @@
+{
+  "analyzers": [
+    {
+      "name": "shingleIndex",
+      "tokenizer": {
+        "maxTokenLength": 15,
+        "type": "whitespace"
+      },
+      "tokenFilters": [
+        {
+          "maxShingleSize": 5,
+          "minShingleSize": 2,
+          "type": "shingle"
+        }
+      ]
+    }
+  ]
+}
