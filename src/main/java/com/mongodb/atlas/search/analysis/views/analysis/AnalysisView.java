@@ -64,7 +64,7 @@ public class AnalysisView extends Div {
     Upload defUpload = new Upload(memoryBuffer);
     
     private Button clear = new Button("Clear");
-    private Button submit = new Button("Submit");
+    private Button submit = new Button("Analyze");
 
     public AnalysisView() {
         addClassName("analysis-view");
