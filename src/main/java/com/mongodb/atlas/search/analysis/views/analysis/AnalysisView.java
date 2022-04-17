@@ -63,7 +63,7 @@ public class AnalysisView extends Div {
     MemoryBuffer memoryBuffer = new MemoryBuffer();
     Upload defUpload = new Upload(memoryBuffer);
     
-    private Button cancel = new Button("Cancel");
+    private Button clear = new Button("Clear");
     private Button submit = new Button("Submit");
 
     public AnalysisView() {
@@ -73,7 +73,7 @@ public class AnalysisView extends Div {
         add(createFormLayout());
         add(createButtonLayout());
 
-        cancel.addClickListener(e -> {
+        clear.addClickListener(e -> {
             clearOutput();
         });
         submit.addClickListener(e -> {
@@ -317,7 +317,7 @@ public class AnalysisView extends Div {
         
         submit.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         buttonLayout.add(submit);
-        buttonLayout.add(cancel);
+        buttonLayout.add(clear);
         return buttonLayout;
     }
 }
