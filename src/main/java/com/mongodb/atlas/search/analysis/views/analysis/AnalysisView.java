@@ -19,6 +19,7 @@ import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
+import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.select.Select;
@@ -156,7 +157,11 @@ public class AnalysisView extends Div {
     }
     
     private Component createTitle() {
-        return new H3("Atlas Search Analysis");
+		Image img = new Image("images/mongodb-atlas.png", "MongoDB Atlas Search");
+		img.setWidth("200px");
+		return img;
+
+        //return new H3("Atlas Search Analysis");
     }
 
     private Component createFormLayout() {
