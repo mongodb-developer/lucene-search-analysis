@@ -12,7 +12,12 @@ import com.vaadin.flow.router.Route;
 @Route(value = "about", layout = MainLayout.class)
 public class AboutView extends VerticalLayout {
 
-    public AboutView() {
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	public AboutView() {
         setSpacing(false);
 
         Image img = new Image("images/atlas-search.png", "MongoDB Atlas Search");
