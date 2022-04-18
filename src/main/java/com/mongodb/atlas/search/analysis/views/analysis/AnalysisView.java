@@ -2,7 +2,7 @@ package com.mongodb.atlas.search.analysis.views.analysis;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.logging.Logger;
+//import java.util.logging.Logger;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.core.KeywordAnalyzer;
@@ -18,7 +18,6 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -45,7 +44,7 @@ public class AnalysisView extends Div {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	private final static Logger logger = Logger.getLogger(AnalysisView.class.getName());
+	//private final static Logger logger = Logger.getLogger(AnalysisView.class.getName());
 	private Select<String> analyzer = new Select<String>();
     private String selectedAnalyzer = new String("Standard");
 	private Select<String> operator = new Select<String>();
@@ -159,6 +158,7 @@ public class AnalysisView extends Div {
     private Component createTitle() {
 		Image img = new Image("images/mongodb-atlas.png", "MongoDB Atlas Search");
 		img.setWidth("200px");
+		img.getStyle().set("margin-top", "20px");
 		return img;
 
         //return new H3("Atlas Search Analysis");
