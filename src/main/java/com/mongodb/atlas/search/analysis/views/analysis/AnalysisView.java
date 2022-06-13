@@ -2,7 +2,7 @@ package com.mongodb.atlas.search.analysis.views.analysis;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-//import java.util.logging.Logger;
+import java.util.logging.Logger;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.core.KeywordAnalyzer;
@@ -44,7 +44,7 @@ public class AnalysisView extends Div {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	//private final static Logger logger = Logger.getLogger(AnalysisView.class.getName());
+	private final static Logger logger = Logger.getLogger(AnalysisView.class.getName());
 	private Select<String> analyzer = new Select<String>();
     private String selectedAnalyzer = new String("Standard");
 	private Select<String> operator = new Select<String>();
@@ -136,6 +136,7 @@ public class AnalysisView extends Div {
 					} else {
 						result = luceneAnalyzer.printTokens(analyzer, textToAnalyze.getValue(), selectedOperator, selectedTokenizer, minGram.getValue().toString(), maxGram.getValue().toString());
 						if (null != result) {
+							logger.info(result);
 							output.getElement().setProperty("innerHTML", result);
 						}
 					}
@@ -261,6 +262,7 @@ public class AnalysisView extends Div {
     		"lucene.korean",
     		"lucene.latvian",
     		"lucene.lithuanian",
+    		"lucene.morfologik",
     		"lucene.norwegian",
     		"lucene.persian",
     		"lucene.portuguese",
