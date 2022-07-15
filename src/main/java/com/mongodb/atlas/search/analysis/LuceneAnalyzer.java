@@ -43,6 +43,7 @@ import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.analysis.es.SpanishAnalyzer;
 import org.apache.lucene.analysis.et.EstonianAnalyzer;
 import org.apache.lucene.analysis.fa.PersianAnalyzer;
+import org.apache.lucene.analysis.fa.PersianCharFilterFactory;
 import org.apache.lucene.analysis.fi.FinnishAnalyzer;
 import org.apache.lucene.analysis.fr.FrenchAnalyzer;
 import org.apache.lucene.analysis.ga.IrishAnalyzer;
@@ -50,12 +51,14 @@ import org.apache.lucene.analysis.gl.GalicianAnalyzer;
 import org.apache.lucene.analysis.hi.HindiAnalyzer;
 import org.apache.lucene.analysis.hu.HungarianAnalyzer;
 import org.apache.lucene.analysis.hy.ArmenianAnalyzer;
+import org.apache.lucene.analysis.icu.ICUNormalizer2CharFilterFactory;
 import org.apache.lucene.analysis.icu.ICUFoldingFilterFactory;
 import org.apache.lucene.analysis.icu.ICUNormalizer2FilterFactory;
 import org.apache.lucene.analysis.id.IndonesianAnalyzer;
 import org.apache.lucene.analysis.it.ItalianAnalyzer;
 import org.apache.lucene.analysis.lt.LithuanianAnalyzer;
 import org.apache.lucene.analysis.lv.LatvianAnalyzer;
+import org.apache.lucene.analysis.miscellaneous.ASCIIFoldingFilterFactory;
 import org.apache.lucene.analysis.miscellaneous.LengthFilterFactory;
 import org.apache.lucene.analysis.miscellaneous.TrimFilterFactory;
 import org.apache.lucene.analysis.ngram.EdgeNGramFilterFactory;
@@ -412,6 +415,18 @@ public class LuceneAnalyzer {
 								ArrayList<String> tokenizerParams = new ArrayList<>();
 								if (tokenizerType.equals("uaxUrlEmail")) {
 									tokenizerType = "uax29UrlEmail";	// Atlas Search omits the "29"
+								} else if (tokenizerType.equals("edgeGram")) {
+									tokenizerType = "edgeNGram";	// Atlas Search omits the "N"
+									try {
+										int minGram = def.optJSONObject(KEY_TOKENIZER).getInt("minGram");
+										tokenizerParams.add("minGramSize");
+										tokenizerParams.add(Integer.toString(minGram));
+										int maxGram = def.optJSONObject(KEY_TOKENIZER).getInt("maxGram");
+										tokenizerParams.add("maxGramSize");
+										tokenizerParams.add(Integer.toString(maxGram));
+									} catch (JSONException jex) {
+										throw new ParseException(jex.getLocalizedMessage());								
+									}
 								} else if (tokenizerType.equals("regexCaptureGroup")) {
 									tokenizerType = "pattern";
 									try {
@@ -421,6 +436,15 @@ public class LuceneAnalyzer {
 										int group = def.optJSONObject(KEY_TOKENIZER).getInt("group");
 										tokenizerParams.add("group");
 										tokenizerParams.add(Integer.toString(group));
+									} catch (JSONException jex) {
+										throw new ParseException(jex.getLocalizedMessage());								
+									}
+								} else if (tokenizerType.equals("regexSplit")) {
+									tokenizerType = "pattern";
+									try {
+										String pattern = def.optJSONObject(KEY_TOKENIZER).getString("pattern");
+										tokenizerParams.add("pattern");
+										tokenizerParams.add(pattern);
 									} catch (JSONException jex) {
 										throw new ParseException(jex.getLocalizedMessage());								
 									}
@@ -472,6 +496,10 @@ public class LuceneAnalyzer {
 										charFilterClass = HTMLStripCharFilterFactory.class;
 									} else if (charFilterType.equals("mapping")) {
 										charFilterClass = AtlasSearchMappingCharFilterFactory.class;
+									} else if (charFilterType.equals("icuNormalize")) {
+										charFilterClass = ICUNormalizer2CharFilterFactory.class;
+									} else if (charFilterType.equals("persian")) {
+										charFilterClass = PersianCharFilterFactory.class;
 									}
 									
 									String[] strs = tester.charFiltersToParams(charFilters, charFilterType);
@@ -539,6 +567,10 @@ public class LuceneAnalyzer {
 							
 						case "lowercase":
 							params.add(LowerCaseFilterFactory.class);
+							break;
+						
+						case "asciiFolding":
+							params.add(ASCIIFoldingFilterFactory.class);
 							break;
 							
 						case "stopword":
