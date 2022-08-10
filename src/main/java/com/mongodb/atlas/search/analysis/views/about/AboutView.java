@@ -1,14 +1,16 @@
 package com.mongodb.atlas.search.analysis.views.about;
 
 import com.mongodb.atlas.search.analysis.views.MainLayout;
+import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Image;
-import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.svg.Svg;
 import com.vaadin.flow.component.svg.elements.Path;
+import com.vaadin.flow.dom.StyleUtil;
+import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 
@@ -38,27 +40,19 @@ public class AboutView extends VerticalLayout {
         gitIcon.add(path);
         gitIcon.setWidth("100%");
         gitIcon.setHeight("32px");
+        gitIcon.getStyle().set("fill","#00684aff");
         Div outerDiv = new Div();
         Div iconDiv = new Div();
         iconDiv.add(gitIcon);
+        iconDiv.getStyle().set("float", "left").set("padding-right", "10px"); 
         Div textDiv = new Div();
         Anchor a = new Anchor(
         		"https://github.com/10gen/lucene-search-analysis",
         		"Check this out on GitHub");
         textDiv.add(a);
+        textDiv.getStyle().set("float", "left").set("clear", "none");
         outerDiv.add(iconDiv, textDiv);
         add(outerDiv);
-        /*
-         * <svg class="MuiSvgIcon-root MuiSvgIcon-colorPrimary" focusable="false" viewBox="0 0 24 24" aria-hidden="true">
-         * <path d="></path></svg>
-         * </div>
-         * <div class="MuiGrid-root MuiGrid-item">
-         * 		<a class="MuiTypography-root MuiLink-root MuiLink-underlineHover MuiTypography-colorPrimary" href="https://github.com/10gen/presales-mside" target="_blank" rel="noopener">
-         * 			<p class="MuiTypography-root MuiTypography-body1 MuiTypography-colorPrimary">Check this out on GitHub</p>
-         * 		</a>
-         * </div>
-         * </div>
-         */
 
         setSizeFull();
         setJustifyContentMode(JustifyContentMode.CENTER);
